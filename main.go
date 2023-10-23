@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
 	"github.com/moutend/go-wca/pkg/wca"
+	"golang.org/x/sys/windows"
 )
 
 func main() {
@@ -96,6 +98,16 @@ func run(args []string) (err error) {
 		var name string
 		acs2.GetDisplayName(&name)
 		fmt.Println(processId, name)
+		process, err := windows.OpenProcess(windows.PROCESS_QUERY_INFORMATION, false, processId)
+		if err != nil {
+			return err
+		}
+		reflect.TypeOf(process)
+		var strSize uint32 = 255
+		var str uint16
+		res := windows.QueryFullProcessImageName(process, 0, &str, &strSize)
+		fmt.Println(res)
+		fmt.Println(str)
 	}
 
 	return
