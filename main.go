@@ -103,11 +103,14 @@ func run(args []string) (err error) {
 			return err
 		}
 		reflect.TypeOf(process)
-		var strSize uint32 = 255
-		var str uint16
-		res := windows.QueryFullProcessImageName(process, 0, &str, &strSize)
-		fmt.Println(res)
-		fmt.Println(str)
+		var buff []uint16 = make([]uint16, 255)
+		var buffPtr *uint16 = &buff[0]
+		var buffSize uint32 = uint32(len(buff))
+		res := windows.QueryFullProcessImageName(process, 0, buffPtr, &buffSize)
+		if res != nil {
+			return res
+		}
+		fmt.Println(windows.UTF16ToString(buff))
 	}
 
 	return
