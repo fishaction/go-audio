@@ -81,6 +81,11 @@ func run(args []string) (err error) {
 
 	fmt.Println(cnt)
 
+	SHGetFileInfoW := windows.NewLazyDLL("shell32.dll").NewProc("SHGetFileInfoW")
+	if SHGetFileInfoW.Find() != nil {
+		log.Fatalln(SHGetFileInfoW.Find())
+	}
+
 	for i := 0; i < cnt; i++ {
 		var session *wca.IAudioSessionControl
 		if err = sessionEnumerator.GetSession(i, &session); err != nil {
@@ -110,8 +115,47 @@ func run(args []string) (err error) {
 		if res != nil {
 			return res
 		}
-		fmt.Println(windows.UTF16ToString(buff))
+		filePath := windows.UTF16ToString(buff)
+		fmt.Println(filePath)
+
+		shfile := SHFILEINFOA{}
+		size := reflect.TypeOf(shfile).Size()
+
+		flag := SHGFI_ICON | SHGFI_LARGEICON
+
+		var result uintptr
+		var dwFileAttributes int32 = -1
+
+		result, _, err = SHGetFileInfoW.Call(
+			(uintptr)(unsafe.Pointer(&filePath)),
+			(uintptr)(unsafe.Pointer(&dwFileAttributes)),
+			(uintptr)(unsafe.Pointer(&shfile)),
+			size,
+			(uintptr)(unsafe.Pointer(&flag)),
+		)
+		if (int(result) == 0) && (err != nil) {
+			fmt.Println(err)
+		}
+		fmt.Println("status: ", err)
+		fmt.Println("HICON_Addr: ", (SHFILEINFOA)(shfile).hicon)
+	}
+	FromHICON := windows.NewLazyDLL("gdiplus.dll").NewProc("GdipCreateBitmapFromHICON")
+	if FromHICON.Find() != nil {
+		log.Fatalln(FromHICON.Find())
 	}
 
 	return
+}
+
+const SHGFI_ICON uint32 = 0x000000100
+const SHGFI_LARGEICON uint32 = 0x000000000
+
+type HICON uintptr
+
+type SHFILEINFOA struct {
+	hicon         HICON
+	iIcon         int32
+	dwAttributes  uint32
+	szDisplayName [260]uint8
+	szTypeName    [80]uint8
 }
