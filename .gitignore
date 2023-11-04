@@ -8,6 +8,8 @@
 *.so
 *.dylib
 
+!/lib/ExtractIconLibrary.dll
+
 # Test binary, built with `go test -c`
 *.test
 
