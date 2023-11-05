@@ -1,0 +1,1 @@
+IAudioSessionControl2->GetDisplayNameでプロセスの名前を取得できる

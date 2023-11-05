@@ -20,13 +20,7 @@ func GetAudioSessionControl2(asc *wca.IAudioSessionControl) (*wca.IAudioSessionC
 	return asc2, nil
 }
 
-func GetIconFromPid(pid uint32) (string, error) {
-	ExtractIconLibrary, err := windows.LoadDLL("./lib/ExtractIconLibrary.dll")
-	ExtractIconV3, err := ExtractIconLibrary.FindProc("ExtractIconV3")
-	if err != nil {
-		return string([]byte{0}), err
-	}
-
+func GetProcessImagePath(pid uint32) (string, error) {
 	process, err := windows.OpenProcess(windows.PROCESS_QUERY_INFORMATION, false, pid)
 	if err != nil {
 		return string([]byte{0}), err
@@ -37,8 +31,19 @@ func GetIconFromPid(pid uint32) (string, error) {
 	if err = windows.QueryFullProcessImageName(process, 0, buffPtr, &buffSize); err != nil {
 		return string([]byte{0}), err
 	}
+	return windows.UTF16ToString(buff), nil
+}
 
-	filePath := windows.UTF16ToString(buff)
+func GetIconFromPid(pid uint32) (string, error) {
+	ExtractIconLibrary, err := windows.LoadDLL("./lib/ExtractIconLibrary.dll")
+	ExtractIconV3, err := ExtractIconLibrary.FindProc("ExtractIconV3")
+	if err != nil {
+		return string([]byte{0}), err
+	}
+	var filePath string
+	if filePath, err = GetProcessImagePath(pid); err != nil {
+		return string([]byte{0}), err
+	}
 	expPath := strconv.Itoa(int(pid)) + ".png"
 
 	var resultPtr uintptr
